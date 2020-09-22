@@ -5,7 +5,7 @@ const error = Symbol("error");
  * @param {any} value
  */
 const regenerate = (value) => {
-    if (value && error in value) {
+    if (value && typeof value == "object" && error in value) {
         throw value[error];
     }
     return value;
