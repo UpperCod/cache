@@ -1,5 +1,16 @@
 const fill = [];
 
+const error = Symbol("error");
+/**
+ * @param {any} value
+ */
+const regenerate = (value) => {
+    if (value && error in value) {
+        throw value[error];
+    }
+    return value;
+};
+
 export default function createCache(cache = new Map()) {
     return function (id, args = fill) {
         if (!cache.has(id)) {
@@ -10,7 +21,7 @@ export default function createCache(cache = new Map()) {
         const isFn = typeof id == "function";
         const isArgsArray = Array.isArray(args);
         if (ref.has(args)) {
-            return ref.get(args);
+            return regenerate(ref.get(args));
         }
         if (isArgsArray) {
             for (const [memoArgs, memoValue] of ref) {
@@ -18,12 +29,16 @@ export default function createCache(cache = new Map()) {
             }
         }
         if (isFn) {
-            memoValue = isArgsArray ? id(...args) : id(args);
+            try {
+                memoValue = isArgsArray ? id(...args) : id(args);
+            } catch (e) {
+                memoValue = { [error]: e };
+            }
         } else {
             memoValue = args;
         }
         ref.set(args, memoValue);
-        return memoValue;
+        return regenerate(memoValue);
     };
 }
 
